@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OREO or ORE-NO! — Guess the real cookie flavors</title>
+<meta name="description" content="Ten rounds, five flavors each. Drag the three real Oreo flavors to Food and the two impostors to Fake.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0A47A9;        /* cookie-bag blue */
+  --blue-deep:#062F73;
+  --blue-bright:#2E7CF6;
+  --wafer:#221714;       /* dark cocoa */
+  --creme:#FFF3DC;
+  --snow:#FFFFFF;
+  --gold:#E8B86B;
+  --bad:#E2413F;
+  --good:#3BC46D;
+  --shadow:0 12px 30px rgba(3,20,60,.35);
+  --radius:22px;
+  font-family:"Baloo 2","Nunito","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  color:var(--snow);
+  background:
+    radial-gradient(1200px 600px at 50% -200px, #2C6FE0 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, #113F9A 0%, transparent 55%),
+    var(--blue);
+  min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  overflow-x:hidden;
+  user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+}
+button{font:inherit;cursor:pointer;border:0}
+.btn{
+  background:var(--snow);color:var(--blue);
+  font-weight:800;font-size:1.15rem;letter-spacing:.01em;
+  padding:.8rem 1.8rem;border-radius:999px;
+  box-shadow:0 6px 0 #C9D6EE, var(--shadow);
+  transition:transform .08s, box-shadow .08s, opacity .2s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #C9D6EE, var(--shadow)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.btn.dark{background:var(--wafer);color:var(--creme);box-shadow:0 6px 0 #0d0807, var(--shadow)}
+.btn.dark:active{box-shadow:0 2px 0 #0d0807, var(--shadow)}
+.btn:focus-visible,.cookie:focus-visible,.zone:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+
+/* ---------- header ---------- */
+header{
+  width:100%;max-width:980px;padding:18px 18px 0;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.logo{display:flex;align-items:baseline;gap:.35rem;line-height:1;font-weight:800;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.logo .a{font-size:clamp(1.5rem,5vw,2.4rem)}
+.logo .or{font-size:clamp(.9rem,2.6vw,1.2rem);opacity:.85;font-weight:700}
+.logo .b{
+  font-size:clamp(1.5rem,5vw,2.4rem);
+  color:var(--wafer);
+  background:var(--creme);padding:.05em .35em .1em;border-radius:.4em;
+  transform:rotate(-3deg);display:inline-block;
+  box-shadow:0 4px 0 var(--gold);
+}
+.hud{display:flex;gap:8px}
+.pill{
+  background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);
+  border-radius:999px;padding:.35rem .9rem;font-weight:700;font-size:.95rem;
+  min-width:86px;text-align:center;font-variant-numeric:tabular-nums;
+}
+.pill small{display:block;font-size:.62rem;letter-spacing:.06em;opacity:.8;font-weight:700}
+
+/* ---------- screens ---------- */
+main{width:100%;max-width:980px;padding:10px 18px 30px;flex:1;display:flex;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column}
+.screen.on{display:flex}
+
+/* title screen */
+#title{align-items:center;justify-content:center;text-align:center;gap:22px;padding-top:2vh}
+.hero-title{font-size:clamp(2.6rem,9vw,5.4rem);font-weight:800;line-height:.95;margin:0;text-shadow:0 6px 0 rgba(0,0,0,.28)}
+.hero-title .no{
+  display:inline-block;color:var(--wafer);background:var(--creme);
+  padding:.02em .3em .1em;border-radius:.35em;transform:rotate(-4deg);
+  box-shadow:0 8px 0 var(--gold);
+}
+.hero-cookies{display:flex;gap:-10px;margin-top:6px}
+.hero-cookies svg{width:clamp(62px,14vw,110px);height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35))}
+.hero-cookies svg:nth-child(2){transform:translateY(-14px) rotate(8deg)}
+.hero-cookies svg:nth-child(3){transform:rotate(-6deg)}
+.rules{max-width:560px;font-size:1.08rem;line-height:1.45;font-weight:500;margin:0;opacity:.95}
+.rules b{font-weight:800}
+.fineprint{font-size:.8rem;opacity:.7;max-width:520px;margin:0}
+
+/* game screen */
+.roundbar{display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px;gap:12px}
+.roundbar h2{margin:0;white-space:nowrap;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:800}
+.roundbar p{margin:0;font-size:.95rem;opacity:.85;text-align:right}
+.tray{
+  min-height:150px;border-radius:var(--radius);
+  background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.35);
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 10px;
+  padding:12px 8px;transition:background .2s;
+}
+.tray:empty::after{content:"All five sorted — check your answer";opacity:.7;font-weight:700}
+.zones{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.zone{
+  position:relative;border-radius:50%;min-height:330px;aspect-ratio:1.35/1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 34px;
+  transition:transform .15s, box-shadow .15s, background .15s;
+}
+.zone.food{background:var(--snow);color:var(--blue);box-shadow:inset 0 0 0 6px #DCE7FA, var(--shadow)}
+.zone.fake{background:var(--wafer);color:var(--creme);box-shadow:inset 0 0 0 6px #3a2a25, var(--shadow)}
+.zone.over{transform:scale(1.025)}
+.zone.food.over{box-shadow:inset 0 0 0 8px var(--blue-bright), var(--shadow)}
+.zone.fake.over{box-shadow:inset 0 0 0 8px var(--gold), var(--shadow)}
+.zone h3{margin:0;font-size:clamp(1.5rem,6vw,2.3rem);font-weight:800;line-height:1}
+.zone p{margin:2px 0 10px;font-size:.85rem;opacity:.8;font-weight:700}
+.zone .slots{width:100%;min-height:150px;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:4px}
+.zone .ring{
+  position:absolute;inset:10px;border-radius:50%;pointer-events:none;
+  border:3px dashed currentColor;opacity:.12;
+}
+
+/* cookie card */
+.cookie{
+  width:118px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 4px;border-radius:16px;cursor:grab;
+  transition:transform .12s, background .12s;position:relative;
+  color:inherit;
+}
+.cookie svg{width:84px;height:84px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+.cookie .lbl{
+  font-weight:800;font-size:.78rem;line-height:1.05;text-align:center;
+  max-width:112px;text-wrap:balance;
+}
+.zone .cookie{width:92px}
+.zone .cookie svg{width:62px;height:62px}
+.zone .cookie .lbl{font-size:.68rem;max-width:88px}
+.cookie:hover{transform:translateY(-3px)}
+.cookie.selected{background:rgba(255,255,255,.18);outline:3px solid var(--gold)}
+.zone.food .cookie.selected{background:#EAF1FF}
+.cookie.dragging{
+  position:fixed;z-index:50;pointer-events:none;margin:0;
+  transform:scale(1.08) rotate(-3deg);cursor:grabbing;
+  background:transparent;
+}
+.cookie.dragging svg{filter:drop-shadow(0 18px 22px rgba(0,0,0,.45))}
+.cookie.ghost{opacity:0}
+
+.actions{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:22px;flex-wrap:wrap}
+.hint{font-weight:700;opacity:.85;min-height:1.3em;text-align:center;margin-top:14px;font-size:.95rem}
+.result{display:none;margin-top:22px;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.result.on{display:flex}
+.result .verdict{font-size:clamp(1.3rem,4.5vw,1.8rem);font-weight:800;line-height:1.1}
+.result .verdict small{display:block;font-size:.85rem;font-weight:700;opacity:.8;margin-top:4px}
+.game-locked .cookie{cursor:default;opacity:.8}
+.game-locked .cookie:hover{transform:none}
+.hint.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* modal */
+.modal{
+  position:fixed;inset:0;background:rgba(4,22,64,.7);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:16px;z-index:100;
+}
+.modal.on{display:flex}
+.card{
+  background:var(--snow);color:var(--wafer);border-radius:28px;width:min(560px,100%);
+  max-height:92dvh;overflow:auto;padding:26px 24px;box-shadow:var(--shadow);
+  animation:pop .28s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.card h2{margin:0 0 4px;font-size:1.9rem;font-weight:800;color:var(--blue);line-height:1}
+.card .sub{margin:0 0 16px;font-weight:700;opacity:.7}
+.fact{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:2px solid #EEF2FA}
+.fact svg{width:54px;height:54px;flex:none}
+.fact b{display:block;font-size:1.02rem}
+.fact span{font-size:.92rem;line-height:1.35;font-weight:500}
+.fakes{margin-top:14px;padding:10px 14px;border-radius:14px;background:#F5EFE6;font-size:.92rem;font-weight:600}
+.fakes b{color:var(--bad)}
+.card .btn{margin-top:18px;width:100%;background:var(--blue);color:var(--snow);box-shadow:0 6px 0 var(--blue-deep)}
+.card .btn:active{box-shadow:0 2px 0 var(--blue-deep)}
+
+/* final */
+.final .big{display:flex;gap:10px;margin:14px 0}
+.final .stat{flex:1;background:#F0F5FF;border-radius:18px;padding:12px;text-align:center}
+.final .stat b{display:block;font-size:1.9rem;color:var(--blue);line-height:1}
+.final .stat small{font-weight:700;opacity:.7}
+.final .score{text-align:center;padding:14px;border-radius:18px;background:var(--wafer);color:var(--creme)}
+.final .score b{font-size:2.6rem;display:block;line-height:1;color:var(--gold)}
+.final .score em{font-style:normal;font-weight:800;font-size:1.1rem}
+.final .note{font-size:.85rem;opacity:.7;margin:10px 0 0;text-align:center}
+
+footer{font-size:.72rem;opacity:.6;padding:0 18px 14px;text-align:center;max-width:720px}
+
+@media (max-width:560px){
+  .zones{grid-template-columns:1fr;gap:12px;margin-top:12px}
+  .zone{min-height:200px;aspect-ratio:2.1/1;padding:14px 40px;border-radius:50%}
+  .zone h3{font-size:1.5rem}
+  .zone p{margin-bottom:4px;font-size:.75rem}
+  .zone .slots{min-height:80px;gap:2px}
+  .logo .b{white-space:nowrap}
+  .logo .a,.logo .b{font-size:1.3rem}
+  .logo .or{display:none}
+  .roundbar h2{white-space:nowrap}
+  .roundbar p{font-size:.8rem}
+  .cookie{width:100px}
+  .cookie svg{width:70px;height:70px}
+  .zone .cookie{width:76px}
+  .zone .cookie svg{width:50px;height:50px}
+  .zone .cookie .lbl{font-size:.6rem}
+  .tray{min-height:130px}
+  .hud .pill{min-width:70px;padding:.3rem .6rem;font-size:.85rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" aria-label="OREO or ORE-NO!"><span class="a">OREO</span><span class="or">or</span><span class="b">ORE-NO!</span></div>
+  <div class="hud" id="hud" hidden>
+    <div class="pill"><small>Round</small><span id="hudRound">1/10</span></div>
+    <div class="pill"><small>Checks</small><span id="hudTries">0</span></div>
+    <div class="pill"><small>Time</small><span id="hudTime">0:00</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- TITLE -->
+  <section class="screen on" id="title">
+    <div class="hero-cookies" id="heroCookies"></div>
+    <h1 class="hero-title">OREO <span style="font-size:.5em;vertical-align:middle;opacity:.85">or</span> <span class="no">ORE-NO!</span></h1>
+    <p class="rules">
+      Ten rounds. Five flavors each. Exactly <b>three are real</b> cookies that were actually sold or tested, and <b>two are impostors</b> we made up.
+      Drag each cookie into <b>Food</b> or <b>Fake</b>, then check. Get all five right to unlock the story behind the real ones.
+      Miss any and you'll only learn how many you got — not which.
+    </p>
+    <p class="rules" style="font-size:.95rem">Your result is judged on <b>total checks</b> and <b>total time</b>. Fakes get sneakier every round.</p>
+    <button class="btn" id="startBtn">Start the taste test</button>
+    <p class="fineprint">Nothing is saved or sent anywhere — your score lives only on this screen. Flavor list current to late summer 2026.</p>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen" id="game">
+    <div class="roundbar">
+      <h2 id="roundTitle">Round 1</h2>
+      <p id="roundBlurb">Warm-up. The fakes aren't trying very hard yet.</p>
+    </div>
+    <div class="tray" id="tray" aria-label="Unsorted cookies"></div>
+    <div class="zones">
+      <div class="zone food" id="zoneFood" data-zone="real" tabindex="0" role="button" aria-label="Food: real flavors">
+        <div class="ring"></div>
+        <h3>Food</h3><p>Really existed</p>
+        <div class="slots"></div>
+      </div>
+      <div class="zone fake" id="zoneFake" data-zone="fake" tabindex="0" role="button" aria-label="Fake: invented flavors">
+        <div class="ring"></div>
+        <h3>Fake</h3><p>Never a cookie</p>
+        <div class="slots"></div>
+      </div>
+    </div>
+    <div class="actions" id="actions">
+      <button class="btn" id="checkBtn" disabled>Check the shelf</button>
+    </div>
+    <div class="result" id="result">
+      <div class="verdict" id="verdict"></div>
+      <button class="btn dark" id="retryBtn">Rearrange and try again</button>
+    </div>
+    <div class="hint" id="hint">Tip: you can also tap a cookie, then tap a circle.</div>
+  </section>
+</main>
+
+<footer>Fan-made trivia game. Not affiliated with, endorsed by, or sponsored by Mondelēz International. Cookie art is original and generic.</footer>
+
+<!-- MODAL -->
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+/* =========================================================
+   DATA
+   Real: [name, cremeColor, waferColor, fact]
+   Fake: [name, cremeColor, waferColor, tier 1..5]  (5 = sneakiest)
+   Wafer palette: choc, gold, red, graham, pink, green, dark, mint, blue
+   ========================================================= */
+const W = {choc:"#241713",gold:"#E9B96A",red:"#8E1F2E",graham:"#C9894A",pink:"#F1A2C4",green:"#5FA85B",dark:"#120B09",blue:"#2E6BD6",cake:"#F2C27A"};
+
+const REAL = [
+["Original","#FFF6E3",W.choc,"Introduced in 1912 in New York City and still the best-selling cookie on Earth."],
+["Double Stuf","#FFF6E3",W.choc,"Arrived in 1974 with roughly twice the creme. Lawsuits later argued it was closer to 1.86×."],
+["Mega Stuf","#FFF6E3",W.choc,"Launched in 2013 with around three times the standard creme."],
+["The Most Stuf","#FFF6E3",W.choc,"A 2019 limited run stacked with more than four times the usual creme."],
+["Golden","#FFF6E3",W.gold,"The vanilla-wafer version debuted in 2004 and became a permanent fixture."],
+["Mint","#A9E8C9",W.choc,"Cool mint creme has been a long-running staple of the everyday lineup."],
+["Peanut Butter","#D9A15C",W.choc,"A permanent flavor and one of the most-requested creme fillings."],
+["Birthday Cake","#FFF1F6",W.choc,"Released in 2012 for the brand's 100th birthday, with sprinkles baked into the creme."],
+["Lemon","#FFF08A",W.gold,"Lemon creme on golden wafers joined the permanent range in 2015."],
+["Dark Chocolate","#3A231C",W.dark,"Darker wafers with dark-chocolate creme, added to the core lineup in 2020."],
+["Carrot Cake","#F5C9A2",W.cake,"Carrot-cake flavored wafers with cream-cheese style creme, launched in 2019."],
+["Java Chip","#C8A27A",W.choc,"Coffee creme speckled with chocolate chips, introduced in 2021."],
+["Toffee Crunch","#E4B47E",W.choc,"Toffee creme with crunchy candy bits, a 2021 addition."],
+["Chocolate Peanut Butter Pie","#D9A15C",W.graham,"Graham wafers, chocolate and peanut butter cremes — a 2021 hit that stuck around."],
+["Watermelon","#FF8FA3",W.gold,"Summer 2013's golden wafers held half pink, half green creme. Divisive, to put it kindly."],
+["Fruit Punch","#FF6B7A",W.gold,"A summer 2014 limited edition with bright red fruity creme."],
+["Limeade","#C8F08F",W.gold,"Another summer 2014 golden-wafer experiment that tasted like a lime soda."],
+["Banana Split","#FFE9A8",W.gold,"2013's twist paired strawberry and banana cremes between golden wafers."],
+["Berry Burst Ice Cream","#F7A1CF",W.gold,"A 2013 limited edition with a pink berry creme meant to taste like ice cream."],
+["Candy Corn","#FFC94D",W.gold,"Halloween 2012 packed yellow and orange creme into golden wafers."],
+["Candy Cane","#FFE8E8",W.choc,"A holiday regular with peppermint creme and crushed candy-cane pieces."],
+["Gingerbread","#E5B07A",W.gold,"A 2012 holiday limited edition with spiced gingerbread creme."],
+["Pumpkin Spice","#F3A24B",W.gold,"Fall 2014 brought orange pumpkin-spice creme to golden wafers."],
+["Caramel Apple","#F0C48C",W.gold,"A fall 2014 Target exclusive with apple and caramel cremes."],
+["Root Beer Float","#E9D7B8",W.choc,"2014's mash-up used one chocolate wafer, one golden wafer and root-beer creme."],
+["Marshmallow Crispy","#FFF6E3",W.gold,"2014's golden wafers held marshmallow creme with crisped-rice bits."],
+["Cookie Dough","#E7C89E",W.graham,"First sold in 2014, retired, then revived in 2026 with choco-chip flavored wafers."],
+["Red Velvet","#FFF3F0",W.red,"Launched in 2015 with cream-cheese flavored creme; it was so popular it went permanent for years."],
+["Cinnamon Bun","#FFF6E3",W.cake,"2016's cinnamon-flavored wafers were filled with frosting-style creme."],
+["S'mores","#F7E6C8",W.graham,"A 2015 favorite: graham wafers with marshmallow and chocolate cremes."],
+["Key Lime Pie","#D3F07E",W.graham,"Graham-flavored wafers and tart lime creme arrived in 2015."],
+["Brownie Batter","#4A2E26",W.choc,"A 2015 limited edition with fudgy brownie-batter creme."],
+["Filled Cupcake","#5A3A30",W.choc,"2016's version put chocolate creme with a vanilla center between chocolate wafers."],
+["Swedish Fish","#F23B4E",W.choc,"A 2016 Kroger exclusive with red fruity creme — widely considered the most infamous flavor ever."],
+["Jelly Donut","#FFD6E0",W.gold,"2017 golden wafers with a ring of vanilla creme around a jelly center."],
+["Blueberry Pie","#8F7BE0",W.graham,"A 2016 Target exclusive that paired graham wafers with blueberry creme."],
+["Apple Pie","#F4D4A3",W.graham,"Graham wafers and apple-pie creme, released in 2018."],
+["Waffles & Syrup","#F2C06A",W.gold,"A 2017 Walmart exclusive with maple-syrup flavored creme on golden wafers."],
+["Mississippi Mud Pie","#3B241E",W.choc,"A 2017 limited edition with dense chocolate mud-pie creme."],
+["Cherry Cola","#B3243A",W.choc,"A 2018 fan-contest finalist with popping candy in the creme."],
+["Kettle Corn","#F5E3B0",W.gold,"A 2018 #MyOreoCreation finalist that tasted like sweet-and-salty popcorn."],
+["Piña Colada Thins","#FFF3C4",W.gold,"The third 2018 fan-contest finalist, built on the Thins format."],
+["Firework","#FFF6E3",W.choc,"2017's classic creme was studded with popping candy for a fizzing surprise."],
+["Peeps","#FF8FC8",W.gold,"2017 marshmallow Peeps creme famously dyed tongues (and more) bright pink."],
+["Hot & Spicy Cinnamon","#E23A2E",W.choc,"A 2018 release whose red creme delivered real cinnamon heat."],
+["Chocolate Hazelnut","#6B3F2A",W.choc,"Hazelnut-spread flavored creme, released in 2018."],
+["Dunkin' Mocha","#B48A6A",W.choc,"A 2017 collaboration with Dunkin' Donuts featuring mocha creme."],
+["Fruity Crisp","#FFD98A",W.gold,"2016's golden wafers held creme with fruity-cereal bits."],
+["Mystery Oreo (Churro)","#E8C189",W.choc,"2019's unmarked mystery flavor turned out to be churro."],
+["Chocolate Marshmallow","#F7EEDF",W.choc,"A 2020 limited edition with chocolate and marshmallow cremes."],
+["Caramel Coconut","#EACBA0",W.choc,"2020's caramel creme was sprinkled with toasted coconut bits."],
+["Tiramisu","#E7D3B8",W.choc,"Coffee-and-mascarpone flavored creme, first on Thins and then full-size in 2020."],
+["Marshmallow Moon","#EDE7FF",W.choc,"A 2019 tie-in for Apollo 11's 50th anniversary, sold in glow-in-the-dark packs."],
+["Maple Creme","#E7A85B",W.choc,"A 2019 limited edition with maple-flavored creme."],
+["Cotton Candy","#F7B8E6",W.gold,"2015's golden wafers held pink-and-blue cotton candy creme."],
+["Strawberry Shortcake","#FFC7D6",W.gold,"A 2021 golden-wafer release with strawberry and shortcake cremes."],
+["Chocolate Strawberry","#F27A9A",W.choc,"2021's Valentine's-season flavor with strawberry and chocolate cremes."],
+["Wasabi","#B7E28A",W.choc,"Sold in China in 2018 — bright green creme with real wasabi kick."],
+["Hot Chicken Wing","#E8703A",W.choc,"Also a 2018 China release; savory, spicy and completely real."],
+["Green Tea","#B9DCA0",W.choc,"A long-running matcha-flavored favorite in several Asian markets."],
+["Orange Ice Cream","#FFB562",W.choc,"An orange-creamsicle style flavor sold in China."],
+["Neapolitan","#F3A6B8",W.gold,"A 2023 Mega Stuf release layering strawberry, vanilla and chocolate cremes."],
+["Sour Patch Kids","#8FE07A",W.gold,"A 2024 mash-up with sour-sugar coated creme in Sour Patch colors."],
+["Coca-Cola","#B02A25",W.choc,"2024's collaboration had cola-flavored creme with popping candy."],
+["Space Dunk","#7B6BE8",W.choc,"A 2024 galaxy-swirl creme with popping candy, sold with a chance to win a trip to space."],
+["Mint Chip","#A6E3C4",W.choc,"2024's mint creme held chocolate chips and the wafers were embossed like waffle cones."],
+["Lady Gaga","#8BE39A",W.pink,"2021's pink golden wafers held green creme to celebrate the album Chromatica."],
+["Trolls","#F7B4F3",W.gold,"A 2016 movie tie-in with glitter-flecked pink creme."],
+["Pokémon","#FFF6E3",W.choc,"2021's cookies were embossed with 16 characters; rare Mew cookies sold for absurd sums online."],
+["Game of Thrones","#FFF6E3",W.dark,"2019's wafers were stamped with the sigils of the show's great houses."],
+["Black & White Cookie","#FFF6E3",W.choc,"A 2025 tribute to the NYC deli classic with half vanilla, half chocolate creme."],
+["Post Malone","#E9C08F",W.gold,"2025's celebrity collab mixed one chocolate and one golden wafer with salted caramel and shortbread cremes."],
+["Selena Gomez","#F0D5B0",W.choc,"A 2025 collaboration with horchata-inspired cinnamon creme."],
+["Banana Pudding","#FFE58F",W.gold,"One of three Southern-inspired flavors launched August 2026 for a fan vote."],
+["Deep Fried","#F2C97A",W.gold,"August 2026's fair-food homage — fans vote on which of the trio returns in 2027."],
+["Chicken & Waffles","#E9B45A",W.gold,"Yes, really. A limited 2026 release in the Southern flavor showdown."],
+["Reese's","#D48B3B",W.choc,"Reese's peanut butter creme with cookie crumbs — made a permanent flavor in January 2026."],
+["Chocolate Ganache Thins","#3D241C",W.choc,"A 2026 permanent Thins flavor with rich chocolate-ganache creme."],
+["Big Stuf","#FFF6E3",W.choc,"Sold 1984–1991: single giant cookies, each about 250 calories."],
+["Salted Caramel Thins","#E9B676",W.choc,"A Thins flavor with sweet-salty caramel creme."],
+["Pistachio Thins","#B9E0A0",W.choc,"Pistachio-flavored creme on Thins, released in 2021."],
+["Coconut Thins","#FFF6E3",W.gold,"Toasted-coconut creme on golden Thins."],
+["Peppermint Bark","#F6E9E9",W.choc,"A holiday release with peppermint creme and chocolate bark pieces."],
+["Rocky Road Trip","#8F6B58",W.choc,"2019's chocolate creme with marshmallow and soy-nut bits."],
+["Love Oreo","#FFB3C7",W.choc,"A 2019 Valentine's cookie with pink creme and red candy bits."],
+["Chocolate Confetti Cake","#F6EBDD",W.choc,"A 2023 limited edition with sprinkle-filled cake creme."],
+["Ultimate Chocolate","#3E241C",W.choc,"2022's triple-layer creme: milk, dark and white chocolate."],
+["Snickerdoodle","#EBCB9E",W.cake,"A 2022 limited edition with cinnamon-sugar creme."],
+["Dairy Queen Blizzard","#FFF6E3",W.choc,"A 2023 collaboration with vanilla soft-serve flavored creme and cookie bits."]
+];
+
+const FAKE = [
+// tier 1 — plausible now that savory exists, but still a stretch
+["Dill Pickle","#B8D77A",W.gold,1],
+["Buffalo Ranch","#F3A86B",W.gold,1],
+["Everything Bagel","#F1E7D0",W.gold,1],
+["Sour Cream & Onion","#EAF0D8",W.gold,1],
+["Ketchup & Fries","#E24A3A",W.gold,1],
+// tier 2 — candy-aisle plausible
+["Bubble Gum","#F7A6D9",W.gold,2],
+["Blue Raspberry Slushie","#5FB8FF",W.gold,2],
+["Grape Soda","#9A6BE0",W.choc,2],
+["Mango Chili","#FFAE42",W.gold,2],
+["Lavender Honey","#C9B8F0",W.gold,2],
+// tier 3 — bakery-case plausible
+["Oatmeal Raisin","#E6C9A0",W.graham,3],
+["Salted Pretzel","#E9D8B8",W.choc,3],
+["White Chocolate Macadamia","#FFF6E3",W.gold,3],
+["Peanut Brittle","#E5B36A",W.choc,3],
+["Lemon Meringue Pie","#FFF2A8",W.graham,3],
+// tier 4 — coffee-shop plausible
+["Caramel Macchiato","#D9B48A",W.choc,4],
+["Boston Cream Pie","#F7E6B8",W.choc,4],
+["Sweet Potato Pie","#F0A45A",W.graham,4],
+["Butter Pecan","#EBC89A",W.gold,4],
+["Brown Butter Chocolate Chip","#E3C199",W.graham,4],
+["Pumpkin Cheesecake","#F2B67A",W.graham,4],
+// tier 5 — indistinguishable from a real press release
+["Raspberry Cheesecake","#F6B5C9",W.graham,5],
+["Vanilla Bean Latte","#EFD9BD",W.gold,5],
+["Molten Lava Cake","#4E2A21",W.dark,5],
+["Salted Butterscotch","#E8B25E",W.choc,5],
+["Cinnamon Toast","#E5B889",W.cake,5],
+["Cherry Pie","#E24C64",W.graham,5]
+];
+
+const BLURBS = [
+"Warm-up. The fakes aren't trying very hard yet.",
+"Still gentle. Trust your gut.",
+"The impostors have started reading candy labels.",
+"Now they sound like real snack-aisle products.",
+"These fakes could pass for a bakery menu.",
+"Somebody clearly studied the pastry case.",
+"Coffee-shop energy. Think about what actually shipped.",
+"Every one of these sounds like it was sold at Target.",
+"Nearly indistinguishable from a real press release.",
+"Final round. The fakes are perfect. Good luck."
+];
+
+/* =========================================================
+   COOKIE ART (original, generic sandwich cookie)
+   ========================================================= */
+function cookieSVG(creme, wafer, id){
+  const light = "rgba(255,255,255,.14)", dark = "rgba(0,0,0,.35)";
+  const isLight = ["#E9B96A","#C9894A","#F1A2C4","#F2C27A","#5FA85B"].includes(wafer);
+  const emboss = isLight ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.16)";
+  const dots = [];
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2;dots.push(`<circle cx="${(50+Math.cos(a)*24).toFixed(1)}" cy="${(41+Math.sin(a)*24).toFixed(1)}" r="1.9" fill="${emboss}"/>`);}
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2+0.4;dots.push(`<circle cx="${(50+Math.cos(a)*13).toFixed(1)}" cy="${(41+Math.sin(a)*13).toFixed(1)}" r="1.6" fill="${emboss}"/>`);}
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- bottom wafer -->
+  <circle cx="50" cy="57" r="38" fill="${wafer}"/>
+  <circle cx="50" cy="57" r="38" fill="none" stroke="${dark}" stroke-width="2.5" stroke-dasharray="3 3"/>
+  <!-- creme -->
+  <ellipse cx="50" cy="51" rx="37" ry="36" fill="${creme}"/>
+  <ellipse cx="50" cy="52" rx="37" ry="36" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="1"/>
+  <!-- top wafer -->
+  <circle cx="50" cy="41" r="38" fill="${wafer}"/>
+  <circle cx="50" cy="41" r="38" fill="none" stroke="${light}" stroke-width="2.5" stroke-dasharray="3 3"/>
+  <circle cx="50" cy="41" r="31" fill="none" stroke="${emboss}" stroke-width="1.6"/>
+  <circle cx="50" cy="41" r="17" fill="none" stroke="${emboss}" stroke-width="1.6"/>
+  <path d="M50 33 L52.5 38.5 L58 41 L52.5 43.5 L50 49 L47.5 43.5 L42 41 L47.5 38.5 Z" fill="${emboss}"/>
+  ${dots.join("")}
+  <ellipse cx="38" cy="26" rx="10" ry="5" fill="rgba(255,255,255,.08)" transform="rotate(-30 38 26)"/>
+</svg>`;
+}
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+let locked = false, rounds = [], roundIdx = 0, tries = 0, startTime = 0, endTime = 0, timerId = null, selected = null;
+
+function buildRounds(){
+  const reals = shuffle(REAL.slice());
+  const fakesByTier = {};
+  FAKE.forEach(f => (fakesByTier[f[3]] ||= []).push(f));
+  Object.values(fakesByTier).forEach(shuffle);
+  rounds = [];
+  for(let r=0;r<10;r++){
+    const tier = Math.min(5, Math.floor(r/2)+1);
+    const pool = fakesByTier[tier];
+    const fakes = pool.splice(0,2);
+    while(fakes.length<2){ // safety fallback
+      const alt = Object.values(fakesByTier).find(p=>p.length); fakes.push(alt.shift());
+    }
+    const items = reals.splice(0,3).map(x=>({name:x[0],creme:x[1],wafer:x[2],fact:x[3],real:true}))
+      .concat(fakes.map(x=>({name:x[0],creme:x[1],wafer:x[2],real:false})));
+    rounds.push(shuffle(items));
+  }
+}
+
+function fmtTime(ms){ const s=Math.floor(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+function tick(){ $("#hudTime").textContent = fmtTime(Date.now()-startTime); }
+
+function startGame(){
+  buildRounds(); roundIdx=0; tries=0;
+  $("#hudTries").textContent="0";
+  $("#hud").hidden=false;
+  $("#title").classList.remove("on"); $("#game").classList.add("on");
+  startTime=Date.now(); timerId=setInterval(tick,500); tick();
+  loadRound();
+}
+
+function loadRound(){
+  const r=rounds[roundIdx];
+  $("#roundTitle").textContent=`Round ${roundIdx+1}`;
+  $("#roundBlurb").textContent=BLURBS[roundIdx];
+  $("#hudRound").textContent=`${roundIdx+1}/10`;
+  $("#hint").textContent = roundIdx===0 ? "Tip: you can also tap a cookie, then tap a circle." : "";
+  document.querySelectorAll(".zone .slots").forEach(s=>s.innerHTML="");
+  const tray=$("#tray"); tray.innerHTML="";
+  r.forEach((item,i)=>{
+    const el=document.createElement("div");
+    el.className="cookie"; el.tabIndex=0; el.dataset.idx=i;
+    el.setAttribute("role","button"); el.setAttribute("aria-label",item.name+" cookie, unsorted");
+    el.innerHTML=cookieSVG(item.creme,item.wafer)+`<div class="lbl">${item.name}</div>`;
+    tray.appendChild(el);
+  });
+  selected=null; setLocked(false); updateCheck();
+}
+
+function setLocked(v){
+  locked=v;
+  $("#game").classList.toggle("game-locked",v);
+  $("#actions").style.display = v ? "none" : "";
+  $("#result").classList.toggle("on",v);
+  document.querySelectorAll(".cookie").forEach(c=>{ c.tabIndex = v ? -1 : 0; c.setAttribute("aria-disabled", v?"true":"false"); });
+}
+
+function updateCheck(){ $("#checkBtn").disabled = $("#tray").children.length>0; }
+
+function placeCookie(el, zone){
+  el.classList.remove("selected"); selected=null;
+  const target = zone ? zone.querySelector(".slots") : $("#tray");
+  target.appendChild(el);
+  el.setAttribute("aria-label", el.querySelector(".lbl").textContent + (zone? (zone.dataset.zone==="real"?" in Food":" in Fake") : " unsorted"));
+  updateCheck();
+}
+
+/* ---------- drag & drop (pointer events) ---------- */
+let drag=null;
+document.addEventListener("pointerdown",e=>{
+  const el=e.target.closest(".cookie"); if(!el || locked || !$("#game").classList.contains("on")) return;
+  const rect=el.getBoundingClientRect();
+  drag={el, dx:e.clientX-rect.left, dy:e.clientY-rect.top, sx:e.clientX, sy:e.clientY, moved:false, from:el.parentElement, w:rect.width};
+  el.setPointerCapture?.(e.pointerId);
+},{passive:true});
+
+document.addEventListener("pointermove",e=>{
+  if(!drag) return;
+  if(!drag.moved){
+    if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6) return;
+    drag.moved=true;
+    const ph=document.createElement("div"); ph.className="cookie ghost"; ph.style.width=drag.w+"px"; ph.style.height=drag.el.offsetHeight+"px";
+    drag.ph=ph; drag.from.insertBefore(ph,drag.el);
+    drag.el.classList.add("dragging"); drag.el.style.width=drag.w+"px";
+    document.body.appendChild(drag.el);
+  }
+  drag.el.style.left=(e.clientX-drag.dx)+"px"; drag.el.style.top=(e.clientY-drag.dy)+"px";
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  document.querySelectorAll(".zone").forEach(z=>z.classList.toggle("over", !!(under && z.contains(under))));
+  e.preventDefault();
+});
+
+function endDrag(e){
+  if(!drag) return;
+  const d=drag; drag=null;
+  if(!d.moved){ // treated as a tap → select
+    if(selected===d.el){ d.el.classList.remove("selected"); selected=null; }
+    else { document.querySelectorAll(".cookie.selected").forEach(c=>c.classList.remove("selected")); d.el.classList.add("selected"); selected=d.el; $("#hint").textContent="Now tap Food or Fake."; }
+    return;
+  }
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  const zone=under? under.closest(".zone") : null;
+  const tray=under? under.closest(".tray") : null;
+  d.el.classList.remove("dragging"); d.el.style.cssText="";
+  document.querySelectorAll(".zone.over").forEach(z=>z.classList.remove("over"));
+  d.ph?.remove();
+  if(zone) placeCookie(d.el, zone);
+  else if(tray) placeCookie(d.el, null);
+  else { // drop nowhere: return to origin
+    if(d.from.classList.contains("tray")) placeCookie(d.el,null); else placeCookie(d.el,d.from.closest(".zone"));
+  }
+}
+document.addEventListener("pointerup",endDrag);
+document.addEventListener("pointercancel",endDrag);
+
+/* tap-to-place & keyboard */
+document.querySelectorAll(".zone").forEach(z=>{
+  z.addEventListener("click",e=>{ if(locked || e.target.closest(".cookie")) return; if(selected) placeCookie(selected,z); });
+  z.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&selected){e.preventDefault();placeCookie(selected,z);} });
+});
+document.addEventListener("keydown",e=>{
+  const el=document.activeElement;
+  if(locked || !el || !el.classList.contains("cookie")) return;
+  if(e.key==="f"||e.key==="F"||e.key==="ArrowLeft"){placeCookie(el,$("#zoneFood"));el.focus();}
+  if(e.key==="k"||e.key==="K"||e.key==="ArrowRight"){placeCookie(el,$("#zoneFake"));el.focus();}
+  if(e.key==="Backspace"||e.key==="ArrowUp"){placeCookie(el,null);el.focus();}
+  if(e.key==="Enter"||e.key===" "){e.preventDefault(); document.querySelectorAll(".cookie.selected").forEach(c=>c.classList.remove("selected")); el.classList.add("selected"); selected=el;}
+});
+
+/* ---------- checking ---------- */
+$("#checkBtn").addEventListener("click",()=>{
+  const r=rounds[roundIdx];
+  tries++; $("#hudTries").textContent=tries;
+  let correct=0;
+  document.querySelectorAll(".zone .cookie").forEach(c=>{
+    const item=r[+c.dataset.idx]; const inFood=c.closest(".zone").dataset.zone==="real";
+    if(item.real===inFood) correct++;
+  });
+  if(correct===5){
+    if(roundIdx===9){ endTime=Date.now(); clearInterval(timerId); }
+    showReveal(r);
+  } else {
+    $("#verdict").innerHTML = `${correct} of 5 right<small>${correct===4 ? "So close — one swap fixes it." : "Not telling you which. Rearrange the cookies and check again."}</small>`;
+    $("#hint").textContent="";
+    setLocked(true);
+    const v=$("#verdict"); v.classList.remove("shake"); void v.offsetWidth; v.classList.add("shake");
+    $("#retryBtn").focus();
+  }
+});
+$("#retryBtn").addEventListener("click",()=>{ setLocked(false); $("#hint").textContent="Move any cookies you want, then check again."; });
+
+function showReveal(r){
+  const reals=r.filter(x=>x.real), fakes=r.filter(x=>!x.real);
+  const last=roundIdx===9;
+  $("#card").innerHTML=`
+    <h2>All five, nailed it.</h2>
+    <p class="sub">Round ${roundIdx+1} cleared. Here's the story behind the real ones.</p>
+    ${reals.map(x=>`<div class="fact">${cookieSVG(x.creme,x.wafer)}<div><b>${x.name}</b><span>${x.fact}</span></div></div>`).join("")}
+    <div class="fakes">The impostors: <b>${fakes[0].name}</b> and <b>${fakes[1].name}</b>. Never shipped, never tested, never crumbled.</div>
+    <button class="btn" id="nextBtn">${last?"See your score":"Next round"}</button>`;
+  $("#modal").classList.add("on");
+  $("#nextBtn").focus();
+  $("#nextBtn").onclick=()=>{
+    if(last){ showFinal(); return; }
+    $("#modal").classList.remove("on"); roundIdx++; loadRound();
+  };
+}
+
+function rankFor(score){
+  if(score>=9000) return "Flavor Historian";
+  if(score>=7500) return "Snack-Aisle Scholar";
+  if(score>=5500) return "Seasoned Dunker";
+  if(score>=3500) return "Casual Cruncher";
+  return "Milk-First Rookie";
+}
+
+function showFinal(){
+  const ms=endTime-startTime, secs=Math.round(ms/1000), extra=tries-10;
+  const score=Math.max(0, 10000 - extra*250 - secs*8);
+  $("#card").innerHTML=`
+    <div class="final">
+      <h2>Shelf cleared!</h2>
+      <p class="sub">All ten rounds, all real flavors found.</p>
+      <div class="big">
+        <div class="stat"><b>${tries}</b><small>total checks<br>(10 is perfect)</small></div>
+        <div class="stat"><b>${fmtTime(ms)}</b><small>total time</small></div>
+      </div>
+      <div class="score"><em>${rankFor(score)}</em><b>${score.toLocaleString()}</b>points</div>
+      <p class="note">10,000 minus 250 per extra check and 8 per second. Nothing is saved — screenshot it to brag.</p>
+      <button class="btn" id="againBtn">Play again</button>
+    </div>`;
+  $("#againBtn").focus();
+  $("#againBtn").onclick=()=>{ $("#modal").classList.remove("on"); startGame(); };
+}
+
+/* ---------- boot ---------- */
+$("#startBtn").addEventListener("click",startGame);
+(function hero(){
+  const picks=[["#FFF6E3",W.choc],["#A9E8C9",W.choc],["#FFF08A",W.gold]];
+  $("#heroCookies").innerHTML=picks.map(p=>cookieSVG(p[0],p[1])).join("");
+})();
+</script>
+</body>
+</html>
