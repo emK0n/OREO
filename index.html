@@ -156,6 +156,12 @@ main{width:100%;max-width:980px;padding:10px 18px 30px;flex:1;display:flex;flex-
 .result.on{display:flex}
 .result .verdict{font-size:clamp(1.3rem,4.5vw,1.8rem);font-weight:800;line-height:1.1}
 .result .verdict small{display:block;font-size:.85rem;font-weight:700;opacity:.8;margin-top:4px}
+.result .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.cookie.pinned{cursor:default;background:rgba(255,255,255,.12)}
+.zone.food .cookie.pinned{background:#EAF1FF}
+.cookie.pinned::after{content:"✓ locked in";position:absolute;top:-4px;left:50%;transform:translateX(-50%);
+  background:var(--good);color:#fff;font-size:.55rem;font-weight:800;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.cookie.pinned:hover{transform:none}
 .game-locked .cookie{cursor:default;opacity:.8}
 .game-locked .cookie:hover{transform:none}
 .hint.shake{animation:shake .4s}
@@ -270,7 +276,10 @@ footer{font-size:.72rem;opacity:.6;padding:0 18px 14px;text-align:center;max-wid
     </div>
     <div class="result" id="result">
       <div class="verdict" id="verdict"></div>
-      <button class="btn dark" id="retryBtn">Rearrange and try again</button>
+      <div class="row">
+        <button class="btn dark" id="retryBtn">Rearrange and try again</button>
+        <button class="btn" id="hintBtn" hidden>Give me a hint</button>
+      </div>
     </div>
     <div class="hint" id="hint">Tip: you can also tap a cookie, then tap a circle.</div>
   </section>
@@ -466,7 +475,7 @@ function cookieSVG(creme, wafer, id){
 const $ = s => document.querySelector(s);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 
-let locked = false, rounds = [], roundIdx = 0, tries = 0, startTime = 0, endTime = 0, timerId = null, selected = null;
+let locked = false, roundFails = 0, hintUsed = false, rounds = [], roundIdx = 0, tries = 0, startTime = 0, endTime = 0, timerId = null, selected = null;
 
 function buildRounds(){
   const reals = shuffle(REAL.slice());
@@ -514,7 +523,7 @@ function loadRound(){
     el.innerHTML=cookieSVG(item.creme,item.wafer)+`<div class="lbl">${item.name}</div>`;
     tray.appendChild(el);
   });
-  selected=null; setLocked(false); updateCheck();
+  selected=null; roundFails=0; hintUsed=false; setLocked(false); updateCheck();
 }
 
 function setLocked(v){
@@ -522,7 +531,7 @@ function setLocked(v){
   $("#game").classList.toggle("game-locked",v);
   $("#actions").style.display = v ? "none" : "";
   $("#result").classList.toggle("on",v);
-  document.querySelectorAll(".cookie").forEach(c=>{ c.tabIndex = v ? -1 : 0; c.setAttribute("aria-disabled", v?"true":"false"); });
+  document.querySelectorAll(".cookie").forEach(c=>{ c.tabIndex = (v||c.classList.contains("pinned")) ? -1 : 0; c.setAttribute("aria-disabled", v?"true":"false"); });
 }
 
 function updateCheck(){ $("#checkBtn").disabled = $("#tray").children.length>0; }
@@ -538,7 +547,7 @@ function placeCookie(el, zone){
 /* ---------- drag & drop (pointer events) ---------- */
 let drag=null;
 document.addEventListener("pointerdown",e=>{
-  const el=e.target.closest(".cookie"); if(!el || locked || !$("#game").classList.contains("on")) return;
+  const el=e.target.closest(".cookie"); if(!el || locked || el.classList.contains("pinned") || !$("#game").classList.contains("on")) return;
   const rect=el.getBoundingClientRect();
   drag={el, dx:e.clientX-rect.left, dy:e.clientY-rect.top, sx:e.clientX, sy:e.clientY, moved:false, from:el.parentElement, w:rect.width};
   el.setPointerCapture?.(e.pointerId);
@@ -590,7 +599,7 @@ document.querySelectorAll(".zone").forEach(z=>{
 });
 document.addEventListener("keydown",e=>{
   const el=document.activeElement;
-  if(locked || !el || !el.classList.contains("cookie")) return;
+  if(locked || !el || !el.classList.contains("cookie") || el.classList.contains("pinned")) return;
   if(e.key==="f"||e.key==="F"||e.key==="ArrowLeft"){placeCookie(el,$("#zoneFood"));el.focus();}
   if(e.key==="k"||e.key==="K"||e.key==="ArrowRight"){placeCookie(el,$("#zoneFake"));el.focus();}
   if(e.key==="Backspace"||e.key==="ArrowUp"){placeCookie(el,null);el.focus();}
@@ -612,10 +621,27 @@ $("#checkBtn").addEventListener("click",()=>{
   } else {
     $("#verdict").innerHTML = `${correct} of 5 right<small>${correct===4 ? "So close — one swap fixes it." : "Not telling you which. Rearrange the cookies and check again."}</small>`;
     $("#hint").textContent="";
+    roundFails++;
+    $("#hintBtn").hidden = !(roundFails>=3 && !hintUsed);
     setLocked(true);
     const v=$("#verdict"); v.classList.remove("shake"); void v.offsetWidth; v.classList.add("shake");
     $("#retryBtn").focus();
   }
+});
+$("#hintBtn").addEventListener("click",()=>{
+  const r=rounds[roundIdx];
+  const cookies=[...document.querySelectorAll(".cookie")].filter(c=>!c.classList.contains("pinned"));
+  const misplaced=c=>{ const z=c.closest(".zone"); if(!z) return true; return (z.dataset.zone==="real")!==r[+c.dataset.idx].real; };
+  const pick=wantReal=>{
+    const pool=cookies.filter(c=>r[+c.dataset.idx].real===wantReal);
+    return pool.find(misplaced) || pool[0];
+  };
+  const realC=pick(true), fakeC=pick(false);
+  hintUsed=true; $("#hintBtn").hidden=true;
+  setLocked(false);
+  if(realC){ placeCookie(realC,$("#zoneFood")); realC.classList.add("pinned"); realC.tabIndex=-1; }
+  if(fakeC){ placeCookie(fakeC,$("#zoneFake")); fakeC.classList.add("pinned"); fakeC.tabIndex=-1; }
+  $("#hint").textContent=`Hint: ${realC.querySelector(".lbl").textContent} is real and ${fakeC.querySelector(".lbl").textContent} is fake. They're locked in — sort the other three.`;
 });
 $("#retryBtn").addEventListener("click",()=>{ setLocked(false); $("#hint").textContent="Move any cookies you want, then check again."; });
 
